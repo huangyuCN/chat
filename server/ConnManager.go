@@ -47,6 +47,7 @@ func NewConnManager(conn *net.TCPConn) {
 			builder.WriteString("/users = show all users registered\n")
 			builder.WriteString("/popular [n] = show the popular word in recent n seconds, n less than 61\n")
 			builder.WriteString("/stats [username] = show the online time of user whose name is username\n")
+			builder.WriteString("/quit = disconnect with server\n")
 			msg := NewMessage("system", builder.String())
 			bytes, err := msg.ToJson()
 			if err != nil {

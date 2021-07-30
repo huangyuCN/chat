@@ -28,7 +28,7 @@ func main() {
 		if scanner.Scan() {
 			msg = scanner.Text()
 		}
-		if msg == "quit" {
+		if msg == "/quit" {
 			break
 		}
 		//		b := []byte(msg + "\n")
