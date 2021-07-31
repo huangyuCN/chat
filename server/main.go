@@ -25,6 +25,7 @@ func main() {
 	tcpAddr, _ = net.ResolveTCPAddr("tcp", "localhost:8080")
 	tcpListener, _ := net.ListenTCP("tcp", tcpAddr)
 	defer tcpListener.Close()
+	fmt.Printf("server started......\n")
 	for {
 		tcpConn, err := tcpListener.AcceptTCP()
 		if err != nil {

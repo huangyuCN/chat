@@ -35,3 +35,11 @@ func TestTrim(t *testing.T) {
 	}
 	fmt.Println("str:", str, len(str))
 }
+
+func TestToMessage(t *testing.T) {
+	str := []byte("hello")
+	msg := ToMessage(str)
+	if msg.Text != "hello"{
+		t.Fatal("error")
+	}
+}

@@ -10,6 +10,7 @@ const (
 	ParamError        = "param error"          //参数错误
 	ParamMiss         = "param miss"           //缺少必要参数
 	NeedJoinRoom      = "please join one room" //聊天前要先加入一个房间
+	MessageEncodeError = "message encode error" //消息编码失败
 
 	Help       = "/help"       //帮助
 	Register   = "/register"   //注册一个用户

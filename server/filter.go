@@ -39,11 +39,9 @@ func (dfa *DFAUtil) insertWord(word []rune) {
 			currNode = childNode
 		}
 	}
-
 	currNode.isEndOfWord = true
 }
 
-// Check if there is any word in the trie that starts with the given prefix.
 func (dfa *DFAUtil) startsWith(prefix []rune) bool {
 	currNode := dfa.root
 	for _, c := range prefix {
@@ -56,7 +54,6 @@ func (dfa *DFAUtil) startsWith(prefix []rune) bool {
 	return true
 }
 
-// Search and make sure if a word is existed in the underlying trie.
 func (dfa *DFAUtil) searchWord(word []rune) bool {
 	currNode := dfa.root
 	for _, c := range word {
@@ -66,13 +63,9 @@ func (dfa *DFAUtil) searchWord(word []rune) bool {
 			currNode = childNode
 		}
 	}
-
 	return currNode.isEndOfWord
 }
 
-// Search a whole sentence and get all the matching words and their indices
-// Return:
-// A list of all the match index object
 func (dfa *DFAUtil) searchSentence(sentence string) (matchIndexList []*matchIndex) {
 	start, end := 0, 1
 	sentenceRuneList := []rune(sentence)
@@ -102,25 +95,21 @@ func (dfa *DFAUtil) searchSentence(sentence string) (matchIndexList []*matchInde
 			}
 		}
 	}
-
 	return
 }
 
-
+// HandleWord 查找字符串中的敏感词，并用特殊字符代替
 func (dfa *DFAUtil) HandleWord(sentence string, replaceCh rune) string {
 	matchIndexList := dfa.searchSentence(sentence)
 	if len(matchIndexList) == 0 {
 		return sentence
 	}
-
-	// Manipulate
 	sentenceList := []rune(sentence)
 	for _, matchIndexObj := range matchIndexList {
 		for index := matchIndexObj.start; index <= matchIndexObj.end; index++ {
 			sentenceList[index] = replaceCh
 		}
 	}
-
 	return string(sentenceList)
 }
 
@@ -128,13 +117,11 @@ func NewDFAUtil(wordList []string) *DFAUtil {
 	dfa := &DFAUtil{
 		root: newTrieNode(),
 	}
-
 	for _, word := range wordList {
 		wordRuneList := []rune(word)
 		if len(wordRuneList) > 0 {
 			dfa.insertWord(wordRuneList)
 		}
 	}
-
 	return dfa
 }

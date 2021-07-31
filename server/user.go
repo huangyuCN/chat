@@ -9,6 +9,7 @@ import (
 	"time"
 )
 
+//user 玩家对象
 type user struct {
 	name       string        //名字
 	login      int64         //登陆时间
@@ -30,7 +31,9 @@ func NewUser(name string, conn *net.TCPConn, userManger *userManager) *user {
 		userManger: userManger,
 	}
 	go user.Listen()
-	user.rooms()
+	if conn != nil {
+		user.rooms()
+	}
 	return user
 }
 
@@ -46,7 +49,7 @@ func (u *user) Disconnect() {
 	close(u.messageIn)
 	//注销玩家信息
 	u.userManger.Unregister(u.name)
-	fmt.Println("玩家[" + u.name + "]离开服务器")
+	fmt.Println("user [" + u.name + "] leave server")
 }
 
 // Broadcast 广播消息
@@ -71,11 +74,13 @@ func (u *user) Listen() {
 			}
 			bytes, err := msg.ToJson()
 			if err != nil {
-				fmt.Println("编码错误", err.Error())
+				fmt.Println(MessageEncodeError, err.Error())
+			} else if u.conn == nil {
+				fmt.Println("send message error: conn is nil")
 			} else {
 				_, err = u.conn.Write(bytes)
 				if err != nil {
-					fmt.Println("发送消息错误", err.Error())
+					fmt.Println("send message error:", err.Error())
 				}
 			}
 		}
@@ -87,14 +92,14 @@ func (u *user) Send(message *Message) {
 	u.room.messageIn <- message
 }
 
-// MessageRouter 消息路由
+// MessageRouter 消息路由，处理所有的GM命令和非GM命令消息
 func (u *user) MessageRouter(message *Message) {
 	u.lock.Lock()
 	defer u.lock.Unlock()
-	if !message.isGm {
+	if !message.isGm { //非GM命令
 		PopularManager.text <- message.Text //统计单词频次
 		u.Send(message)
-	} else {
+	} else { //GM命令
 		switch message.gmOrder[0] {
 		case Register:
 			msg := NewMessage("system", AlreadyRegistered)
@@ -115,7 +120,7 @@ func (u *user) MessageRouter(message *Message) {
 		case Popular:
 			u.popular(message)
 		case Stats:
-			u.stats()
+			u.stats(message)
 		default:
 			msg := NewMessage("system", UnknownOrder)
 			bytes, _ := msg.ToJson()
@@ -136,8 +141,8 @@ func (u *user) rooms() {
 }
 
 func (u *user) createRoom(message *Message) {
-	if len(message.gmOrder) < 2{
-		msg := NewMessage("system", "order error, please user /createRoom name")
+	if len(message.gmOrder) < 2 {
+		msg := NewMessage("system", "command error, please input /createRoom name")
 		bytes, _ := msg.ToJson()
 		u.conn.Write(bytes)
 		return
@@ -163,8 +168,8 @@ func (u *user) leaveRoom() {
 }
 
 func (u *user) joinRoom(message *Message) {
-	if len(message.gmOrder) < 2{
-		msg := NewMessage("system", "order error, please user /joinRoom name")
+	if len(message.gmOrder) < 2 {
+		msg := NewMessage("system", "command error, please input /joinRoom name")
 		bytes, _ := msg.ToJson()
 		u.conn.Write(bytes)
 		return
@@ -211,8 +216,8 @@ func (u *user) users() {
 }
 
 func (u *user) popular(message *Message) {
-	if len(message.gmOrder) < 2{
-		msg := NewMessage("system", "order error, please user /popular n")
+	if len(message.gmOrder) < 2 {
+		msg := NewMessage("system", "command error, please input /popular n")
 		bytes, _ := msg.ToJson()
 		u.conn.Write(bytes)
 		return
@@ -230,9 +235,22 @@ func (u *user) popular(message *Message) {
 	u.conn.Write(bytes)
 }
 
-func (u *user) stats() {
+func (u *user) stats(message *Message) {
+	if len(message.gmOrder) < 2 {
+		msg := NewMessage("system", "command error, please input /stats name")
+		bytes, _ := msg.ToJson()
+		u.conn.Write(bytes)
+		return
+	}
 	now := time.Now().Unix()
-	delta := now - u.login
+	user, find := u.userManger.users[message.gmOrder[1]]
+	if !find {
+		msg := NewMessage("system", "user not found")
+		bytes, _ := msg.ToJson()
+		u.conn.Write(bytes)
+		return
+	}
+	delta := now - user.login
 	t := SecondsToDayStr(delta)
 	msg := NewMessage("system", t)
 	bytes, _ := msg.ToJson()

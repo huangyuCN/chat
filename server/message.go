@@ -12,7 +12,7 @@ type Message struct {
 	Time    int64    //发送时间
 	Text    string   //消息内容
 	isGm    bool     //是否为GM命令
-	gmOrder []string //GM命令
+	gmOrder []string //GM命令参数
 }
 
 // NewMessage 新消息

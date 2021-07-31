@@ -26,9 +26,15 @@ func Filter(text string) string {
 func LoadSensitiveWords() []string {
 	pwd, _ := os.Getwd()
 	fileName := pwd + "/server/words"
+	if strings.HasSuffix(pwd, "server") {
+		fileName = pwd + "/words"
+	}
 	sysType := runtime.GOOS
 	if sysType == "windows" {
 		fileName = pwd + "\\server\\words"
+		if strings.HasSuffix(pwd, "server") {
+			fileName = pwd + "\\words"
+		}
 	}
 	file, err := os.OpenFile(fileName, os.O_RDWR, 0666)
 	if err != nil {
@@ -36,31 +42,31 @@ func LoadSensitiveWords() []string {
 		panic(err)
 	}
 	defer file.Close()
-	stat, err := file.Stat()
+	_, err = file.Stat()
 	if err != nil {
 		panic(err)
 	}
-	var size = stat.Size()
-	fmt.Println("file size=", size)
 	buf := bufio.NewReader(file)
-	words := make([]string, 451)
+	words := make([]string, 0)
 	for {
 		line, err := buf.ReadString('\n')
 		line = strings.TrimSpace(line)
 		if err != nil {
 			if err == io.EOF {
-				fmt.Println("File read ok!")
 				break
 			} else {
 				fmt.Println("Read file error!", err)
 				panic(err)
 			}
 		}
-		words = append(words, line)
+		if len(line) > 0{
+			words = append(words, line)
+		}
 	}
 	return words
 }
 
+// SecondsToDayStr 将秒数解析成“00d 00h 00m 00s”格式的字符串
 func SecondsToDayStr(seconds int64) string {
 	var daySeconds int64 = 24 * 60 * 60
 	var hourSeconds int64 = 60 * 60

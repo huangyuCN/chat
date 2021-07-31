@@ -5,8 +5,9 @@ import (
 	"sync"
 )
 
+// roomManager 聊天室管理器
 type roomManager struct {
-	rooms       map[string]*room //所有现有的聊天室
+	rooms       map[string]*room //所有活跃的聊天室
 	messagesLen uint             //聊天室保存的历史消息长度
 	lock        *sync.Mutex      //保证线程安全
 }
@@ -35,18 +36,6 @@ func (rm *roomManager) NewRoom(name string, owner *user) (error, *room) {
 	room := NewRoom(name, owner, rm.messagesLen, rm)
 	rm.rooms[name] = room
 	return nil, room
-}
-
-// CloseRoom 关闭聊天室
-func (rm *roomManager) CloseRoom(owner *user, room *room) error {
-	rm.lock.Lock()
-	defer rm.lock.Unlock()
-	err := room.Close(owner)
-	if err != nil {
-		return err
-	}
-	delete(rm.rooms, room.name)
-	return nil
 }
 
 // DeleteRoom 删除聊天室

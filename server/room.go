@@ -6,6 +6,7 @@ import (
 	"time"
 )
 
+// room 聊天室对象
 type room struct {
 	name        string           //聊天室名字
 	users       map[string]*user //聊天成员
@@ -13,7 +14,7 @@ type room struct {
 	owner       *user            //创建者
 	messageIn   chan *Message    //接收消息的信道
 	messages    []*Message       //历史消息
-	messagesLen uint             //历史消息长度
+	messagesLen uint             //历史消息最大长度
 	roomManager *roomManager     //聊天室管理器
 	lock        *sync.Mutex      //保证线程安全
 }
@@ -28,8 +29,9 @@ func NewRoom(name string, owner *user, messageLen uint, roomManager *roomManager
 		createTime:  time.Now().Unix(),
 		owner:       owner,
 		messageIn:   make(chan *Message, 10),
-		messages:    make([]*Message, messageLen, messageLen),
+		messages:    make([]*Message, 0, messageLen+1),
 		roomManager: roomManager,
+		messagesLen: messageLen,
 		lock:        new(sync.Mutex),
 	}
 	go room.listen()
@@ -51,8 +53,15 @@ func (room *room) Close(owner *user) error {
 	return nil
 }
 
-// Broadcast 发送消息
+// Broadcast 广播发送消息
 func (room *room) Broadcast(message *Message) {
+	if message.From != "system" && message.isGm == false {
+		room.messages = append(room.messages, message)
+		if len(room.messages) > int(room.messagesLen) {
+			room.messages = room.messages[1:]
+		}
+	}
+
 	for _, user := range room.users {
 		user.Broadcast(message)
 	}
@@ -71,7 +80,7 @@ func (room *room) listen() {
 	}
 }
 
-// Join 用户加入聊天室
+// Join 玩家加入聊天室
 func (room *room) Join(user *user) error {
 	room.lock.Lock()
 	defer room.lock.Unlock()
@@ -88,11 +97,11 @@ func (room *room) Join(user *user) error {
 func (room *room) UserLeave(userName string) {
 	room.lock.Lock()
 	defer room.lock.Unlock()
-	msg := NewMessage("system", userName+" leave the chat room")
-	room.messageIn <- msg
 	delete(room.users, userName)
 	if len(room.users) == 0 {
 		room.roomManager.DeleteRoom(room.name)
+	} else {
+		msg := NewMessage("system", userName+" leave the chat room")
+		room.messageIn <- msg
 	}
-	return
 }

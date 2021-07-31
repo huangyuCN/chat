@@ -8,11 +8,12 @@ import (
 )
 
 type popular struct {
-	words map[int64]map[string]int64
-	times []int64
-	text  chan string
+	words map[int64]map[string]int64 // 记录单词出现的时间和次数
+	times []int64                    //记录单词出现的时间，满了之后自动缩减，并且清理过期单词统计
+	text  chan string                //接受需要统计的消息信道
 }
 
+//NewPopular 创建一个词频统计的管理器
 func NewPopular() *popular {
 	popular := &popular{
 		words: make(map[int64]map[string]int64),
@@ -56,6 +57,7 @@ func (p *popular) listen() {
 	}
 }
 
+// Count 统计出seconds秒内出现次数最多的单词
 func (p *popular) Count(seconds int64) string {
 	now := time.Now().Unix()
 	min := now - seconds
@@ -80,6 +82,7 @@ func (p *popular) Count(seconds int64) string {
 	return list[0].Key
 }
 
+// rankByWordCount 根据单词出现的次数排序，递减
 func rankByWordCount(wordFrequencies map[string]int64) PairList {
 	pl := make(PairList, len(wordFrequencies))
 	i := 0
